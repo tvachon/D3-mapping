@@ -1,4 +1,4 @@
 D3-mapping
 ==========
 
-Some map sketches in D3 for collaboration
+A mashup of D3 and Leaflet maps, currently pulling a Philly shapefile. 
