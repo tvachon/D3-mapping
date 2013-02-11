@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>D3 + Leaflet</title>
+
+
+<style>
+
+
+
+
+body {
+  background: #fcfcfa;
+  color: #333;
+  font-family: "PT Serif", serif;
+  margin: 20px 20px 20px 20px;
+  position: relative;
+  width: 960px;
+}
+
+h1 {
+  font-size: 64px;
+  font-weight: 300;
+  letter-spacing: -2px;
+  margin: .3em 0 .1em 0;
+}
+
+#map {
+  width: 600px;
+  height: 500px;
+}
+
+#text {
+  width: 600px;
+  
+}
+
+path {
+  fill: #000;
+  fill-opacity: .1;
+  stroke: #999;
+  stroke-width: 1.5px;
+  stroke-dasharray: 3,2;
+  
+}
+
+path:hover {
+  fill: brown;
+  fill-opacity: .7;
+}
+
+
+</style>
+
+<header>
+ 
+ 
+</header>
+
+<h1>D3 + Leaflet</h1>
+<div id="text">TODD'S NOTE: THIS IS CLOSE, BUT GENERATING A CROSS-SITE SCRIPTING ERROR IN THE CONSOLE, WHICH PREVENTS THE JSON FILE FROM LOADING IN THE BROWSER (IT WORKS IN CODA THOUGH).  
+
+PROBABLY NEEDS TO RUN ON AN <a href="http://stackoverflow.com/questions/8449716/cross-origin-requests-are-only-supported-for-http-but-its-not-cross-domain">ACTUAL WEB SERVER TO WORK.</a> HIGHLIGHTING NOT WORKING HERE YET EITHER.
+
+REF: <a href="http://bost.ocks.org/mike/leaflet/">http://bost.ocks.org/mike/leaflet/</a></div>
+
+<p id="map">
+
+
+
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.css" />
+<!--[if lte IE 8]>
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.ie.css" />
+<![endif]-->
+
+<script src="http://cdn.leafletjs.com/leaflet-0.5.1/leaflet.js"></script>
+<script>
+
+/* start with a basic map */
+var map = new L.Map("map", {
+      center: [39.9987, -75.13350],
+      zoom: 11
+    })
+    .addLayer(new L.TileLayer("http://{s}.tile.cloudmade.com/15ff4c5331ce43558da101738bb53492/85908/256/{z}/{x}/{y}.png"));
+    
+/* add an SVG element to Leaflet’s overlay pane. The G (group) element will be used to translate the SVG elements so that the top-left corner of the SVG, ⟨0,0⟩, corresponds to Leaflet’s layer origin. The leaflet-zoom-hide class is needed so that the overlay is hidden during Leaflet’s zoom animation */
+var svg = d3.select(map.getPanes().overlayPane).append("svg"),
+    g = svg.append("g").attr("class", "leaflet-zoom-hide");
+    
+
+d3.json("philadelphia.json", function(collection) {/* load the GeoJSON file using d3.json */
+
+/* Leaflet uses a cylindrical (spherical Mercator), letting us compute the bounding box of our features and use our projection to convert the longitude and latitude to pixels */
+  var bounds = d3.geo.bounds(collection),
+  		/* create a d3.geo.path to convert GeoJSON to SVG */
+      path = d3.geo.path().projection(project);
+      /* create path elements for each of the features using D3’s data join */
+      feature = g.selectAll("path")
+      	.data(collection.features)
+      	.enter().append("path");
+    
+/* hook up to Leaflet’s viewreset event, so that the SVG can be repositioned and rerendered whenever the map zooms */
+  map.on("viewreset", reset);
+  reset();
+
+  // Reposition the SVG to cover the features.
+  function reset() {
+    var bottomLeft = project(bounds[0]),
+        topRight = project(bounds[1]);
+        
+        
+/* set the dimensions of the SVG with sufficient padding */
+    svg .attr("width", topRight[0] - bottomLeft[0])
+        .attr("height", bottomLeft[1] - topRight[1])
+        .style("margin-left", bottomLeft[0] + "px")
+        .style("margin-top", topRight[1] + "px");
+
+    g   .attr("transform", "translate(" + -bottomLeft[0] + "," + -topRight[1] + ")");
+/* The path elements are initially empty; later, we’ll initialize the path data by setting the d attribute */
+    feature.attr("d", path);
+  }
+
+/*The load is asynchronous, so the remaining code in this example is within the callback function. 
+
+D3 and Leaflet use different APIs for rendering shapes and projecting points. Fortunately, it’s easy to adapt Leaflet’s API to fit D3 by implementing a custom projection. A projection is simply a function that takes a longitude and latitude as input and returns x and y pixel coordinates.
+*/
+  function project(x) {
+    var point = map.latLngToLayerPoint(new L.LatLng(x[1], x[0]));
+    return [point.x, point.y];
+  }
+});
+
+
+
+</script>
+<script src="highlight.min.js"></script>
